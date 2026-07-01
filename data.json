@@ -1,0 +1,8 @@
+{
+  "stores": [
+    { "id": 1, "name": "Store East", "x": 20, "y": 30, "stock": 50, "drivers": 5 },
+    { "id": 2, "name": "Store West", "stock": 30, "x": 70, "y": 20, "drivers": 2 },
+    { "id": 3, "name": "Store North", "stock": 45, "x": 30, "y": 70, "drivers": 8 },
+    { "id": 4, "name": "Store South", "stock": 10, "x": 80, "y": 80, "drivers": 1 }
+  ]
+}
