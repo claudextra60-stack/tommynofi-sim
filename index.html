@@ -2,64 +2,64 @@
 <html>
 <head>
     <title>JioMart Simulator</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        #map { position: relative; width: 600px; height: 400px; border: 1px solid black; background: #eee; margin-top: 20px; }
-        .store { position: absolute; width: 20px; height: 20px; background: blue; cursor: pointer; border-radius: 50%; }
-        .store:hover { background: red; transform: scale(1.5); }
+        body { font-family: sans-serif; }
+        #map { height: 500px; width: 100%; margin-top: 10px; }
+        #info-pane { position: absolute; background: white; padding: 15px; border: 1px solid #333; display: none; z-index: 1000; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); }
+        #timeline { width: 100%; margin-top: 20px; }
     </style>
 </head>
 <body>
     <h1>JioMart Simulator</h1>
     <div class="controls">
-        Weather: 
-        <select id="weatherKnob" onchange="updateKnobs()">
-            <option value="clear">Clear</option>
-            <option value="rain">Rain</option>
-        </select>
-        Payday: 
-        <input type="checkbox" id="paydayKnob" onchange="updateKnobs()">
+        Weather: <select id="weatherKnob"><option value="clear">Clear</option><option value="rain">Rain</option></select>
+        Payday: <input type="checkbox" id="paydayKnob">
     </div>
     
     <div id="map"></div>
+    <div id="info-pane"></div>
+    <input type="range" id="timeline" min="12" max="24" step="0.1" value="12">
+    <p>Time: <span id="time-display">12:00 PM</span></p>
 
     <script>
-        async function loadSimulation() {
-            try {
-                const response = await fetch('data.json');
-                if (!response.ok) throw new Error('File not found');
-                const baseData = await response.json();
-                
-                const storedKnobs = localStorage.getItem('knobs');
-                const overrides = storedKnobs ? JSON.parse(storedKnobs) : { weather: 'clear', isPayday: false };
-                
-                document.getElementById('weatherKnob').value = overrides.weather;
-                document.getElementById('paydayKnob').checked = overrides.isPayday;
-
-                renderMap(baseData, overrides);
-            } catch (e) {
-                document.getElementById('map').innerHTML = "Error loading data.json: " + e.message;
-            }
-        }
-
-        function updateKnobs() {
-            localStorage.setItem('knobs', JSON.stringify({
-                weather: document.getElementById('weatherKnob').value,
-                isPayday: document.getElementById('paydayKnob').checked
-            }));
-            location.reload();
-        }
-
-        function renderMap(data, knobs) {
-            const map = document.getElementById('map');
-            const multiplier = (knobs.weather === 'rain' || knobs.isPayday) ? 0.2 : 1;
-            
-            map.innerHTML = data.stores.map(s => `
-                <div class="store" style="left: ${s.x}%; top: ${s.y}%;" 
-                     onclick="alert('${s.name} \\nStock: ${Math.floor(s.stock * multiplier)} \\nDrivers: ${s.drivers}')"></div>
-            `).join('');
-        }
+        const map = L.map('map').setView([12.97, 77.59], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         
-        loadSimulation();
+        let baseData = null;
+
+        async function init() {
+            const resp = await fetch('data.json');
+            baseData = await resp.json();
+            updateSimulation();
+        }
+
+        function updateSimulation() {
+            const hour = parseFloat(document.getElementById('timeline').value);
+            const weather = document.getElementById('weatherKnob').value;
+            const isPayday = document.getElementById('paydayKnob').checked;
+            
+            document.getElementById('time-display').innerText = `${Math.floor(hour)}:${Math.round((hour%1)*60)} PM`;
+
+            // Logic: Drivers decrease after 8 PM, Rain/Payday reduces stock
+            baseData.stores.forEach(s => {
+                const driverMultiplier = hour > 20 ? 0.3 : 1;
+                const stockMultiplier = (weather === 'rain' || isPayday) ? 0.2 : 1;
+                
+                const marker = L.circleMarker([s.lat, s.lng], {color: 'blue', radius: 10}).addTo(map);
+                marker.on('click', (e) => {
+                    const pane = document.getElementById('info-pane');
+                    pane.style.display = 'block';
+                    pane.style.left = e.originalEvent.pageX + 'px';
+                    pane.style.top = e.originalEvent.pageY + 'px';
+                    pane.innerHTML = `<h3>${s.name}</h3><p>Stock: ${Math.floor(s.stock * stockMultiplier)}</p><p>Drivers: ${Math.floor(s.drivers * driverMultiplier)}</p>`;
+                });
+            });
+        }
+
+        document.getElementById('timeline').oninput = updateSimulation;
+        init();
     </script>
 </body>
 </html>

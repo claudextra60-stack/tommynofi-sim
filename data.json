@@ -1,8 +1,8 @@
 {
   "stores": [
-    { "id": 1, "name": "Store East", "x": 20, "y": 30, "stock": 50, "drivers": 5 },
-    { "id": 2, "name": "Store West", "x": 70, "y": 20, "stock": 30, "drivers": 2 },
-    { "id": 3, "name": "Store North", "x": 30, "y": 70, "stock": 45, "drivers": 8 },
-    { "id": 4, "name": "Store South", "x": 80, "y": 80, "stock": 10, "drivers": 1 }
+    { "name": "Store East", "lat": 12.975, "lng": 77.60, "stock": 50, "drivers": 5 },
+    { "name": "Store West", "lat": 12.965, "lng": 77.58, "stock": 30, "drivers": 2 },
+    { "name": "Store North", "lat": 12.985, "lng": 77.58, "stock": 45, "drivers": 8 },
+    { "name": "Store South", "lat": 12.960, "lng": 77.61, "stock": 10, "drivers": 1 }
   ]
 }
