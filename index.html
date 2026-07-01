@@ -5,29 +5,29 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { font-family: sans-serif; }
-        #map { height: 500px; width: 100%; margin-top: 10px; }
-        #info-pane { position: absolute; background: white; padding: 15px; border: 1px solid #333; display: none; z-index: 1000; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); }
-        #timeline { width: 100%; margin-top: 20px; }
+        #map { height: 500px; width: 100%; margin-top: 20px; }
+        #info-pane { position: absolute; background: white; padding: 15px; border: 1px solid #333; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
     <h1>JioMart Simulator</h1>
     <div class="controls">
-        Weather: <select id="weatherKnob"><option value="clear">Clear</option><option value="rain">Rain</option></select>
-        Payday: <input type="checkbox" id="paydayKnob">
+        Weather: <select id="weatherKnob" onchange="updateSimulation()"><option value="clear">Clear</option><option value="rain">Rain</option></select>
+        Payday: <input type="checkbox" id="paydayKnob" onchange="updateSimulation()">
     </div>
     
     <div id="map"></div>
     <div id="info-pane"></div>
-    <input type="range" id="timeline" min="12" max="24" step="0.1" value="12">
+    <input type="range" id="timeline" min="12" max="24" step="0.1" value="12" style="width:100%">
     <p>Time: <span id="time-display">12:00 PM</span></p>
 
     <script>
-        const map = L.map('map').setView([12.97, 77.59], 13);
+        // 1. Initialize Map centered on Bengaluru
+        const map = L.map('map').setView([12.97, 77.59], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         
         let baseData = null;
+        let markers = [];
 
         async function init() {
             const resp = await fetch('data.json');
@@ -42,7 +42,11 @@
             
             document.getElementById('time-display').innerText = `${Math.floor(hour)}:${Math.round((hour%1)*60)} PM`;
 
-            // Logic: Drivers decrease after 8 PM, Rain/Payday reduces stock
+            // Clear old markers
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            // Add new markers
             baseData.stores.forEach(s => {
                 const driverMultiplier = hour > 20 ? 0.3 : 1;
                 const stockMultiplier = (weather === 'rain' || isPayday) ? 0.2 : 1;
@@ -55,6 +59,7 @@
                     pane.style.top = e.originalEvent.pageY + 'px';
                     pane.innerHTML = `<h3>${s.name}</h3><p>Stock: ${Math.floor(s.stock * stockMultiplier)}</p><p>Drivers: ${Math.floor(s.drivers * driverMultiplier)}</p>`;
                 });
+                markers.push(marker);
             });
         }
 
